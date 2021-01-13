@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import Videos from "../models/Videos";
+import { VideoType } from "../types/video";
 
 // ----------------------------------------------------------------
 // CRUD endpoints
@@ -44,7 +45,7 @@ export const getVideos = async (req: Request, res: Response) => {
 
         return res.status(200).json({
             success: true,
-            resultsCount: videos.length,
+            results: videos.length,
             data: videos,
         });
     } catch (error) {
@@ -101,6 +102,260 @@ export const deleteVideo = async (req: Request, res: Response) => {
         return res.status(200).json({
             success: true,
             data: {},
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            error: `Server Error`,
+        });
+    }
+};
+
+// ----------------------------------------------------------------
+// Method 1 - Query endpoints
+// ----------------------------------------------------------------
+
+// @desc Get videos sorted from newest to oldest
+// @route GET /api/v1/videos/queryVideos
+// @access Public
+
+export const queryVideos = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        await Videos.find({ disabled: { $ne: true } })
+            .sort({ date_added: "desc" })
+            .exec((err: any, videos: any) => {
+                console.log({ err }, { videos });
+
+                return res.status(200).json({
+                    success: true,
+                    results: videos.length,
+                    data: videos,
+                });
+            });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            error: `Server Error`,
+        });
+    }
+};
+
+// @desc Get videos with a specific tags
+// @route GET /api/v1/videos/queryByTags
+// @access Public
+
+export const queryByTags = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const tags: string[] = (req.query.tags as string).split(",");
+        const videos = await Videos.find({
+            disabled: { $ne: true },
+            tags: { $in: tags },
+        });
+
+        return res.status(200).json({
+            success: true,
+            results: videos.length,
+            data: videos,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            error: `Server Error`,
+        });
+    }
+};
+
+// @desc Get thumbnails
+// @route GET /api/v1/videos/queryThumbnails
+// @access Public
+
+export const queryThumbnails = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const videos = await Videos.find(
+            {
+                disabled: { $ne: true },
+            },
+            { thumbnail: true, _id: false }
+        );
+
+        return res.status(200).json({
+            success: true,
+            results: videos.length,
+            data: videos,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            error: `Server Error`,
+        });
+    }
+};
+
+// @desc Get disabled videos
+// @route GET /api/v1/videos/queryDisabled
+// @access Public
+
+export const queryDisabledVideos = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const videos = await Videos.find({
+            disabled: { $ne: false },
+        });
+
+        return res.status(200).json({
+            success: true,
+            results: videos.length,
+            data: { disabledVideos: videos.length },
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            error: `Server Error`,
+        });
+    }
+};
+
+// ----------------------------------------------------------------
+// Method 2 - Filter endpoints
+// ----------------------------------------------------------------
+
+// @desc Get videos sorted from newest to oldest
+// @route GET /api/v1/videos/filterVideos
+// @access Public
+
+export const filterVideos = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const videos = await Videos.find();
+
+        const enabledVideos = videos.filter(
+            (video: VideoType) => video.disabled !== true
+        );
+
+        const fromNewestToOldest = enabledVideos.sort(
+            (a: VideoType, b: VideoType) => {
+                (new Date(a.date_added) as any) -
+                    (new Date(b.date_added) as any);
+            }
+        );
+
+        return res.status(200).json({
+            success: true,
+            results: enabledVideos.length,
+            data: fromNewestToOldest,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            error: `Server Error`,
+        });
+    }
+};
+
+// @desc Get videos with a specific tags
+// @route GET /api/v1/videos/filterByTags
+// @access Public
+
+export const filterByTags = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const tags: string[] = (req.query.tags as string).split(",");
+
+        const videos = await Videos.find();
+
+        const enabledVideos = videos.filter(
+            (video: VideoType) => !video.disabled
+        );
+
+        const filteredVideos = enabledVideos.filter((video: VideoType) =>
+            video.tags.some((video) => tags.includes(video))
+        );
+
+        return res.status(200).json({
+            success: true,
+            results: filteredVideos.length,
+            data: filteredVideos,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            error: `Server Error`,
+        });
+    }
+};
+
+// @desc Get thumbnails
+// @route GET /api/v1/videos/filterThumbnails
+// @access Public
+
+export const filterThumbnails = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const videos = await Videos.find();
+
+        const enabledVideos = videos.filter(
+            (video: VideoType) => !video.disabled
+        );
+
+        const thumbnails = enabledVideos.map((video: VideoType) => ({
+            thumbnail: video.thumbnail,
+        }));
+
+        return res.status(200).json({
+            success: true,
+            results: videos.length,
+            data: thumbnails,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            error: `Server Error`,
+        });
+    }
+};
+
+// @desc Get disabled videos
+// @route GET /api/v1/videos/filterDisabled
+// @access Public
+
+export const filterDisabledVideos = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const videos = await Videos.find().filter(
+            (video: VideoType) => video.disabled
+        );
+
+        return res.status(200).json({
+            success: true,
+            results: videos.length,
+            data: { disabledVideos: videos.length },
         });
     } catch (error) {
         return res.status(500).json({
