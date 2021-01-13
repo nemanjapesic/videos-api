@@ -1,0 +1,36 @@
+{
+    "name": "videos-api",
+    "description": "Simple API",
+    "version": "1.0.0",
+    "main": "src/index.ts",
+    "scripts": {
+        "start": "nodemon src/index.ts",
+        "build": "tsc --project ./"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/nemanjapesic/videos-api.git"
+    },
+    "keywords": [
+        "api",
+        "videos"
+    ],
+    "author": "Nemanja Pesic",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/nemanjapesic/videos-api/issues"
+    },
+    "homepage": "https://github.com/nemanjapesic/videos-api#readme",
+    "dependencies": {
+        "express": "^4.17.1",
+        "mongoose": "^5.11.11"
+    },
+    "devDependencies": {
+        "@types/express": "^4.17.11",
+        "@types/mongoose": "^5.10.3",
+        "@types/node": "^14.14.20",
+        "nodemon": "^2.0.7",
+        "ts-node": "^9.1.1",
+        "typescript": "^4.1.3"
+    }
+}
